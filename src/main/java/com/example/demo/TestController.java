@@ -1,5 +1,6 @@
 package com.example.demo;
 
+
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.*;
 import org.flowable.engine.history.HistoricActivityInstance;
@@ -8,6 +9,8 @@ import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.image.ProcessDiagramGenerator;
 import org.flowable.task.api.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,11 +40,24 @@ public class TestController {
     private HistoryService historyService;
     @Autowired
     private RepositoryService repositoryService;
+    /*
     @Autowired
     private ProcessEngine processEngine;
+*/
+    private final ProcessEngine processEngine;
+
+    final  static Logger logger = LoggerFactory.getLogger("rootLogger");
+    /**
+     * Autowired 只会执行一次，所以成员变量是否加final 吴映香
+     * @param processEngine
+     */
+    @Autowired
+    public TestController(ProcessEngine processEngine) {
+        this.processEngine = processEngine;
+    }
 
     /**
-     * 创建流程
+     * 创建流
      *
      * @param userId
      * @param days
@@ -74,7 +90,7 @@ public class TestController {
     /**
      * 通过/拒绝任务
      *
-     * @param taskId
+     * @param taskId, 每一个activity的主键id,见table:ACT_RU_EXECUTION的ID_
      * @param approved 1 ：true  2：false
      * @return
      */
@@ -237,19 +253,36 @@ public class TestController {
                 .processInstanceId(InstanceId)
                 .list();
 
+        logger.info("processId:[" + processId + "], processInstanceId:[" + pi.getId() + "], runningProcessInstanceId:" + InstanceId + "]");
         //得到正在执行的Activity的Id
         List<String> activityIds = new ArrayList<>();
+        List<String> exeIds = new ArrayList<>();
         List<String> flows = new ArrayList<>();
         for (Execution exe : executions) {
             List<String> ids = runtimeService.getActiveActivityIds(exe.getId());
             activityIds.addAll(ids);
+            exeIds.add(exe.getId());
         }
+
+        logger.info("activityIds:" + activityIds.toString());
+        logger.info("exeIds:" + exeIds.toString());
 
         //获取流程图
         BpmnModel bpmnModel = repositoryService.getBpmnModel(pi.getProcessDefinitionId());
         ProcessEngineConfiguration engconf = processEngine.getProcessEngineConfiguration();
         ProcessDiagramGenerator diagramGenerator = engconf.getProcessDiagramGenerator();
-        InputStream in = diagramGenerator.generateDiagram(bpmnModel, "png", activityIds, flows, engconf.getActivityFontName(), engconf.getLabelFontName(), engconf.getAnnotationFontName(), engconf.getClassLoader(), 1.0);
+        InputStream in = diagramGenerator.generateDiagram(
+                bpmnModel,
+                "png",
+                activityIds,
+                flows,
+                engconf.getActivityFontName(),
+                engconf.getLabelFontName(),
+                engconf.getAnnotationFontName(),
+                engconf.getClassLoader(),
+                1.0,
+                true);
+
         OutputStream out = null;
         byte[] buf = new byte[1024];
         int legth = 0;
