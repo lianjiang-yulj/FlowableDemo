@@ -9,6 +9,22 @@ spring:
     driverClassName: com.mysql.jdbc.Driver
   resources:
     static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/,classpath:/static/flowable-modeler
-flowable:
+  freemarker:
+    cache: false
+
+  devtools:
+    restart:
+      trigger-file: trigger.txt
+
   #关闭定时任务JOB
   async-executor-activate: false
+
+# 热部署开关，false即不启用热部署
+spring.devtools.restart.enabled: false
+
+# 指定热部署的目录
+spring.devtools.restart.additional-paths: src/main/java
+
+# 指定目录不更新
+spring.devtools.restart.exclude: test/**,WEB-INF/**
+
